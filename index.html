@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KitaPOS - Aplikasi Kasir & Resto</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <!-- Remix Icon -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="manifest" href="/manifest.json">
+</head>
+<body class="bg-gray-50 font-sans antialiased pb-28">
+
+  <!-- ========================================== -->
+  <!-- TAB 1: HALAMAN UTAMA KASIR & KATALOG MENU  -->
+  <!-- ========================================== -->
+  <div id="konten-tab-kasir" class="blok-tab">
+    <header class="bg-white shadow-xs sticky top-0 z-10 px-4 py-3">
+      <div class="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h1 class="text-xl font-bold text-gray-800">Menu Utama Kasir</h1>
+          <p class="text-xs text-gray-500 flex items-center gap-1">
+            <i class="ri-map-pin-2-line text-blue-600"></i> Meja Aktif: <span id="label-meja-aktif" class="font-bold text-blue-600">Take Away (Bungkus)</span>
+          </p>
+        </div>
+        <div class="relative w-full md:w-72">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400"><i class="ri-search-line"></i></span>
+          <input type="text" id="search-bar" placeholder="Cari nama produk..." class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+        </div>
+      </div>
+    </header>
+
+    <nav class="max-w-6xl mx-auto px-4 py-4 overflow-x-auto flex gap-2 whitespace-nowrap no-scrollbar">
+      <button onclick="filterKategori('semua')" class="btn-kategori bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-xs">Semua</button>
+      <button onclick="filterKategori('makanan')" class="btn-kategori bg-white text-gray-600 border border-gray-200 px-4 py-1.5 rounded-full text-xs font-semibold">Makanan</button>
+      <button onclick="filterKategori('minuman')" class="btn-kategori bg-white text-gray-600 border border-gray-200 px-4 py-1.5 rounded-full text-xs font-semibold">Minuman</button>
+      <button onclick="filterKategori('cemilan')" class="btn-kategori bg-white text-gray-600 border border-gray-200 px-4 py-1.5 rounded-full text-xs font-semibold">Cemilan</button>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4">
+      <div id="grid-produk" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+    </main>
+
+    <!-- DOCK BOTTOM BAR -->
+    <div id="cart-bar" class="fixed bottom-18 inset-x-4 bg-white border border-gray-200 p-4 shadow-xl flex items-center justify-between max-w-6xl mx-auto rounded-xl hidden z-20">
+      <div class="flex items-center gap-3">
+        <div class="relative bg-blue-50 p-2.5 rounded-lg text-blue-600">
+          <i class="ri-shopping-bag-3-line text-xl"></i>
+          <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500">Total Pembayaran</p>
+          <p id="cart-total" class="text-base font-bold text-gray-800">Rp 0</p>
+        </div>
+      </div>
+      <button onclick="bukaModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer">
+        Tinjau Keranjang <i class="ri-arrow-right-line"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 2: HALAMAN TAMBAH MENU (ADMIN PANEL)   -->
+  <!-- ========================================== -->
+  <div id="konten-tab-tambah-menu" class="blok-tab hidden">
+    <header class="bg-white shadow-xs sticky top-0 z-10 px-4 py-3">
+      <div class="max-w-xl mx-auto">
+        <h1 class="text-xl font-bold text-gray-800">Kelola Menu Toko</h1>
+        <p class="text-xs text-gray-500">Tambahkan produk kuliner atau barang baru Anda</p>
+      </div>
+    </header>
+    <main class="max-w-xl mx-auto px-4 mt-6">
+      <form id="form-tambah-menu" class="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs space-y-5">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Foto Produk</label>
+          <div class="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-2xl p-4 bg-gray-50 hover:bg-gray-100/50 transition-colors relative group min-h-[160px]">
+            <input type="file" id="input-gambar" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+            <div id="placeholder-gambar" class="text-center space-y-1">
+              <i class="ri-image-add-line text-3xl text-gray-400 group-hover:text-blue-500 transition-colors"></i>
+              <p class="text-xs font-medium text-gray-500">Klik atau seret foto produk ke sini</p>
+            </div>
+            <img id="pratinjau-gambar" src="#" alt="Pratinjau" class="hidden w-full h-40 object-cover rounded-xl shadow-xs">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Produk *</label>
+          <input type="text" id="nama-produk" required placeholder="Contoh: Roti Bakar Keju" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Kategori *</label>
+            <select id="kategori-produk" required class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white">
+              <option value="" disabled selected>Pilih Kategori</option>
+              <option value="makanan">Makanan</option>
+              <option value="minuman">Minuman</option>
+              <option value="cemilan">Cemilan</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Stok Awal *</label>
+            <input type="number" id="stok-produk" required min="0" placeholder="10" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Harga Jual (Rp) *</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm font-semibold text-gray-400 pointer-events-none">Rp</span>
+            <input type="number" id="harga-produk" required min="0" placeholder="15000" class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm font-bold text-gray-800">
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer"><i class="ri-save-line"></i> Simpan & Daftarkan Menu</button>
+      </form>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 3: HALAMAN MANAJEMEN MEJA              -->
+  <!-- ========================================== -->
+  <div id="konten-tab-meja" class="blok-tab hidden">
+    <header class="bg-white shadow-xs sticky top-0 z-10 px-4 py-3">
+      <div class="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 class="text-xl font-bold text-gray-800">Denah Meja Restoran</h1>
+          <div class="flex gap-2 text-[11px] mt-0.5">
+            <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-md font-medium">Kosong</span>
+            <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-md font-medium">Terisi</span>
+          </div>
+        </div>
+        <button onclick="bukaModalTambahMeja()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer">
+          <i class="ri-add-circle-line text-base"></i> Tambah Meja baru
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-6">
+      <div id="grid-meja" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 4: DASHBOARD LAPORAN PEMILIK           -->
+  <!-- ========================================== -->
+  <div id="konten-tab-owner" class="blok-tab hidden">
+    <header class="bg-white shadow-xs sticky top-0 z-10 px-4 py-3">
+      <div class="max-w-5xl mx-auto flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-bold text-gray-800">Dashboard Pemilik Toko</h1>
+          <p class="text-xs text-gray-500">Pantau performa bisnis, omset keuangan, dan data penjualan produk</p>
+        </div>
+        <button onclick="resetDataPenjualan()" class="text-xs font-semibold bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors">
+          <i class="ri-delete-bin-line"></i> Reset Data
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 mt-6 space-y-6">
+      <!-- Grid Ringkasan Finansial Omset -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white border border-gray-100 p-5 rounded-2xl shadow-xs flex items-center gap-4">
+          <div class="p-3 bg-blue-50 text-blue-600 rounded-xl"><i class="ri-calendar-todo-line text-2xl"></i></div>
+          <div>
+            <p class="text-xs font-medium text-gray-400">Penjualan Hari Ini</p>
+            <p id="owner-omset-hari" class="text-lg font-black text-gray-800">Rp 0</p>
+            <p id="owner-count-hari" class="text-[10px] text-gray-400 mt-0.5">0 Transaksi sukses</p>
+          </div>
+        </div>
+        <div class="bg-white border border-gray-100 p-5 rounded-2xl shadow-xs flex items-center gap-4">
+          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><i class="ri-calendar-check-line text-2xl"></i></div>
+          <div>
+            <p class="text-xs font-medium text-gray-400">Penjualan Bulan Ini</p>
+            <p id="owner-omset-bulan" class="text-lg font-black text-gray-800">Rp 0</p>
+            <p id="owner-count-bulan" class="text-[10px] text-gray-400 mt-0.5">0 Transaksi sukses</p>
+          </div>
+        </div>
+        <div class="bg-white border border-gray-100 p-5 rounded-2xl shadow-xs flex items-center gap-4">
+          <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><i class="ri-money-dollar-circle-line text-2xl"></i></div>
+          <div>
+            <p class="text-xs font-medium text-gray-400">Akumulasi Total Omset</p>
+            <p id="owner-omset-total" class="text-lg font-black text-indigo-600">Rp 0</p>
+            <p class="text-[10px] text-gray-400 mt-0.5">Seluruh rekam data masuk</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Kuantitas Barang yang Terjual -->
+      <div class="bg-white border border-gray-100 rounded-2xl shadow-xs p-5">
+        <div class="flex items-center gap-2 mb-4 border-b border-gray-50 pb-3">
+          <i class="ri-restaurant-line text-amber-500 text-lg"></i>
+          <h2 class="text-sm font-bold text-gray-700">Akumulasi Jumlah Produk yang Sudah Terjual</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="text-xs text-gray-400 uppercase border-b border-gray-100">
+                <th class="py-2 font-bold">Nama Produk</th>
+                <th class="py-2 text-center font-bold">Kategori</th>
+                <th class="py-2 text-right font-bold">Total Terjual (Qty)</th>
+              </tr>
+            </thead>
+            <tbody id="owner-tabel-terjual" class="divide-y divide-gray-50 text-gray-700 font-medium"></tbody>
+          </table>
+          <div id="owner-kosong-state" class="text-center py-8 text-gray-400 italic text-xs hidden">
+            Belum ada produk yang berhasil terjual sampai saat ini.
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- BARU! TAB 5: HALAMAN PENGATURAN STRUK      -->
+  <!-- ========================================== -->
+  <div id="konten-tab-struk" class="blok-tab hidden">
+    <header class="bg-white shadow-xs sticky top-0 z-10 px-4 py-3">
+      <div class="max-w-4xl mx-auto">
+        <h1 class="text-xl font-bold text-gray-800">Pengaturan & Kustomisasi Struk</h1>
+        <p class="text-xs text-gray-500">Atur tampilan info struk belanja thermal toko Anda</p>
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-6 grid grid-cols-1 md:grid-cols-5 gap-6">
+      <!-- Kolom Kiri: Form Input -->
+      <form id="form-pengaturan-struk" onsubmit="simpanPengaturanStruk(event)" class="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs space-y-4 md:col-span-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nama Toko / Resto</label>
+          <input type="text" id="struk-input-nama" oninput="livePreviewStruk()" required class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-semibold">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Alamat Toko</label>
+          <input type="text" id="struk-input-alamat" oninput="livePreviewStruk()" required class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nomor Telepon / WhatsApp</label>
+          <input type="text" id="struk-input-telp" oninput="livePreviewStruk()" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Pesan Kaki Struk (Footer)</label>
+          <textarea id="struk-input-footer" oninput="livePreviewStruk()" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600"></textarea>
+        </div>
+        
+        <div class="border-t border-gray-100 pt-4 space-y-3">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" id="struk-input-show-logo" onchange="livePreviewStruk()" class="w-4 h-4 text-blue-600 border-gray-300 rounded-sm focus:ring-blue-500">
+            <span class="text-sm font-medium text-gray-700">Tampilkan Logo Karakter Seni (ASCII Logo)</span>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" id="struk-input-show-tax" onchange="livePreviewStruk()" class="w-4 h-4 text-blue-600 border-gray-300 rounded-sm focus:ring-blue-500">
+            <span class="text-sm font-medium text-gray-700">Aktifkan Penarikan Komponen Pajak 11%</span>
+          </label>
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer mt-2">
+          <i class="ri-save-3-line"></i> Simpan Template Struk
+        </button>
+      </form>
+
+      <!-- Kolom Kanan: Live Preview Kertas Thermal Struk -->
+      <div class="md:col-span-2">
+        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><i class="ri-eye-line text-sm"></i>Pratinjau Kertas Struk (58mm)</label>
+        <div class="bg-amber-50/40 border border-amber-200/60 p-4 rounded-xl font-mono text-xs text-gray-800 shadow-inner whitespace-pre overflow-x-auto leading-relaxed max-w-full" id="struk-live-preview">
+          <!-- Diisi otomatis oleh JavaScript -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: DETAIL OPSI MEJA TERISI             -->
+  <!-- ========================================== -->
+  <div id="modal-opsi-meja" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden backdrop-blur-xs">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="p-2 bg-red-50 text-red-600 rounded-lg"><i class="ri-restaurant-line text-lg"></i></div>
+          <div>
+            <h2 id="opsi-meja-title" class="text-base font-bold text-gray-800">Meja XX</h2>
+            <p id="opsi-meja-pax" class="text-xs text-gray-400">Pelanggan: - (0 Pax)</p>
+          </div>
+        </div>
+        <button onclick="tutupModalOpsiMeja()" class="text-gray-400 hover:text-gray-600"><i class="ri-close-line text-xl"></i></button>
+      </div>
+      <div class="p-4 flex-1 overflow-y-auto">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ringkasan Pesanan</h3>
+        <div id="opsi-meja-list-pesanan" class="space-y-2 border border-gray-100 rounded-xl p-3 bg-gray-50/50 min-h-[100px] text-sm"></div>
+      </div>
+      <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl grid grid-cols-1 gap-2">
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="eksekusiKirimKeKasir()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
+            <i class="ri-wallet-3-line text-sm"></i> Kasir & Bayar
+          </button>
+          <button onclick="eksekusiEditPesananMeja()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
+            <i class="ri-edit-box-line text-sm"></i> Edit / Tambah Menu
+          </button>
+        </div>
+        <button onclick="eksekusiCetakStrukDapur()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
+          <i class="ri-printer-line text-sm"></i> Cetak Struk ke Dapur
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: INPUT DATA PELANGGAN & JUMLAH ORANG -->
+  <!-- ========================================== -->
+  <div id="modal-jumlah-orang" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden backdrop-blur-xs">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-5 relative">
+      <button onclick="tutupModalJumlahOrang()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="ri-close-line text-xl"></i></button>
+      <div class="flex items-center gap-2 mb-4">
+        <div class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i class="ri-user-line text-lg"></i></div>
+        <h2 class="text-base font-bold text-gray-800">Informasi Pelanggan <span id="title-modal-pilih-meja" class="text-blue-600"></span></h2>
+      </div>
+      <form onsubmit="simpanJumlahOrang(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Nama Pelanggan / Atas Nama *</label>
+          <input type="text" id="input-nama-pelanggan" required placeholder="Contoh: Budi, Kak Amanda" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 focus:outline-hidden focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Jumlah Orang / Pax *</label>
+          <input type="number" id="input-pax" required min="1" max="50" value="1" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:outline-hidden focus:border-blue-500">
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="tutupModalJumlahOrang()" class="flex-1 bg-gray-100 hover:bg-200 text-gray-600 font-semibold py-2 rounded-xl text-sm cursor-pointer">Batal</button>
+          <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl text-sm shadow-md cursor-pointer">Buka Meja</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: FORM TAMBAH MEJA BARU               -->
+  <!-- ========================================== -->
+  <div id="modal-tambah-meja" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden backdrop-blur-xs">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-5 relative">
+      <button onclick="tutupModalTambahMeja()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="ri-close-line text-xl"></i></button>
+      <div class="flex items-center gap-2 mb-4">
+        <div class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i class="ri-add-box-line text-lg"></i></div>
+        <h2 class="text-base font-bold text-gray-800">Tambah Meja Resto</h2>
+      </div>
+      <form onsubmit="simpanMejaBaru(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Nomor / Identitas Meja *</label>
+          <input type="text" id="input-nomor-meja" required placeholder="Contoh: 05, VIP-1" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm">
+          <p id="error-tambah-meja" class="text-xs text-red-500 mt-1 hidden">Nomor meja ini sudah terdaftar!</p>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="tutupModalTambahMeja()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold py-2 rounded-xl text-sm">Batal</button>
+          <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl text-sm shadow-md">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL POPUP DETAIL KERANJANG KASIR         -->
+  <!-- ========================================== -->
+  <div id="modal-keranjang" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden backdrop-blur-xs">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+      <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="ri-shopping-cart-2-line text-blue-600 text-xl"></i>
+          <h2 class="text-lg font-bold text-gray-800">Detail Keranjang <span id="modal-meja-title" class="text-sm text-blue-600"></span></h2>
+        </div>
+        <button onclick="tutupModal()" class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"><i class="ri-close-line text-xl"></i></button>
+      </div>
+      <div id="daftar-item-keranjang" class="p-4 overflow-y-auto flex-1 space-y-3 min-h-[150px]"></div>
+      <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+        <div class="space-y-2 text-sm mb-4">
+          <div class="flex justify-between text-gray-600"><span>Subtotal</span><span id="modal-subtotal">Rp 0</span></div>
+          <div id="container-row-pajak" class="flex justify-between text-gray-600"><span>Pajak (<span id="lbl-persen-pajak">11</span>%)</span><span id="modal-pajak">Rp 0</span></div>
+          <div class="flex justify-between text-lg font-bold text-gray-800 pt-2 border-t border-dashed border-gray-200"><span>Total Akhir</span><span id="modal-total" class="text-blue-600">Rp 0</span></div>
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-gray-500 mb-1.5">Metode Pembayaran</label>
+          <div class="grid grid-cols-4 gap-1.5">
+            <label class="border border-gray-200 rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer bg-white text-center has-checkbox-checked:border-blue-600 has-checkbox-checked:bg-blue-50/50">
+              <input type="radio" name="metode_pembayaran" value="Tunai" checked class="hidden">
+              <i class="ri-money-dollar-box-line text-lg text-gray-700"></i><span class="text-[10px] font-bold mt-0.5">Tunai</span>
+            </label>
+            <label class="border border-gray-200 rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer bg-white text-center has-checkbox-checked:border-blue-600 has-checkbox-checked:bg-blue-50/50">
+              <input type="radio" name="metode_pembayaran" value="QRIS" class="hidden">
+              <i class="ri-qr-code-line text-lg text-gray-700"></i><span class="text-[10px] font-bold mt-0.5">QRIS</span>
+            </label>
+            <label class="border border-gray-200 rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer bg-white text-center has-checkbox-checked:border-blue-600 has-checkbox-checked:bg-blue-50/50">
+              <input type="radio" name="metode_pembayaran" value="DANA" class="hidden">
+              <i class="ri-wallet-3-line text-lg text-gray-700"></i><span class="text-[10px] font-bold mt-0.5">DANA</span>
+            </label>
+            <label class="border border-gray-200 rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer bg-white text-center has-checkbox-checked:border-blue-600 has-checkbox-checked:bg-blue-50/50">
+              <input type="radio" name="metode_pembayaran" value="Debit" class="hidden">
+              <i class="ri-bank-card-line text-lg text-gray-700"></i><span class="text-[10px] font-bold mt-0.5">Debit</span>
+            </label>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Uang Diterima (Rp)</label>
+            <input type="number" id="input-bayar" oninput="hitungKembalian()" placeholder="50000" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Kembalian</label>
+            <div id="text-kembalian" class="w-full px-3 py-2 bg-gray-100 rounded-lg text-sm font-bold text-gray-700">Rp 0</div>
+          </div>
+        </div>
+        
+        <div class="flex gap-2">
+          <button id="btn-bayar-nanti" onclick="simpanBayarNanti()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 cursor-pointer text-sm transition-colors">
+            <i class="ri-time-line"></i> Bayar Nanti
+          </button>
+          <button onclick="prosesTransaksi()" class="flex-[1.5] bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer text-sm transition-all">
+            <i class="ri-coins-line"></i> Selesai & Cetak Struk
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- NAVIGASI TAB UTAMA (MODIFIKASI: 5 TOMBOL)  -->
+  <!-- ========================================== -->
+  <div class="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 py-2 shadow-xl z-30 max-w-6xl mx-auto">
+    <div class="flex justify-around items-center">
+      <button onclick="pindahTab('kasir')" id="nav-btn-kasir" class="flex flex-col items-center gap-0.5 text-blue-600 font-semibold cursor-pointer group">
+        <div class="p-1 rounded-xl bg-blue-50"><i class="ri-store-2-line text-xl"></i></div>
+        <span class="text-[11px]">Mesin Kasir</span>
+      </button>
+      <button onclick="pindahTab('meja')" id="nav-btn-meja" class="flex flex-col items-center gap-0.5 text-gray-400 font-medium cursor-pointer group">
+        <div class="p-1 rounded-xl bg-transparent"><i class="ri-git-commit-line rotate-90 text-xl"></i></div>
+        <span class="text-[11px]">Daftar Meja</span>
+      </button>
+      <button onclick="pindahTab('tambah-menu')" id="nav-btn-tambah-menu" class="flex flex-col items-center gap-0.5 text-gray-400 font-medium cursor-pointer group">
+        <div class="p-1 rounded-xl bg-transparent"><i class="ri-add-box-line text-xl"></i></div>
+        <span class="text-[11px]">Tambah Menu</span>
+      </button>
+      <button onclick="pindahTab('owner')" id="nav-btn-owner" class="flex flex-col items-center gap-0.5 text-gray-400 font-medium cursor-pointer group">
+        <div class="p-1 rounded-xl bg-transparent"><i class="ri-pie-chart-line text-xl"></i></div>
+        <span class="text-[11px]">Laporan Toko</span>
+      </button>
+      <!-- TOMBOL BARU: AKSES KONFIGURASI STRUK -->
+      <button onclick="pindahTab('struk')" id="nav-btn-struk" class="flex flex-col items-center gap-0.5 text-gray-400 font-medium cursor-pointer group">
+        <div class="p-1 rounded-xl bg-transparent"><i class="ri-printer-line text-xl"></i></div>
+        <span class="text-[11px]">Edit Struk</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SISTEM LOGIKA JAVASCRIPT POS TERPADU       -->
+  <!-- ========================================== -->
+  <script>
+    const daftarProduk = [
+      { id: 1, nama: "Kopi Susu Gula Aren", harga: 18000, kategori: "minuman", stok: 15, gambar: "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=150&auto=format&fit=crop&q=60" },
+      { id: 2, nama: "Americano Ice", harga: 15000, kategori: "minuman", stok: 20, gambar: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=150&auto=format&fit=crop&q=60" },
+      { id: 3, nama: "Roti Bakar Cokelat", harga: 20000, kategori: "makanan", stok: 8, gambar: "https://images.unsplash.com/photo-1584776296944-ab6fb57b0bdd?w=150&auto=format&fit=crop&q=60" },
+    ];
+
+    const dataMejaDefault = [
+      { nomor: "01", status: "kosong", totalTagihan: 0, jumlahOrang: 0, namaPelanggan: "", keranjangMeja: {} },
+      { nomor: "02", status: "kosong", totalTagihan: 0, jumlahOrang: 0, namaPelanggan: "", keranjangMeja: {} },
+      { nomor: "03", status: "kosong", totalTagihan: 0, jumlahOrang: 0, namaPelanggan: "", keranjangMeja: {} },
+      { nomor: "04", status: "kosong", totalTagihan: 0, jumlahOrang: 0, namaPelanggan: "", keranjangMeja: {} },
+    ];
+
+    // BARU: Default konfigurasi layout struk belanja thermal
+    const dataStrukDefault = {
+      namaToko: "Kopi Kita & Resto",
+      alamatToko: "Jl. Malioboro No. 45, Yogyakarta",
+      telpToko: "0812-3456-7890",
+      footerPesan: "Terima kasih atas kunjungan Anda!\nKritik & Saran hubungi nomor kami.",
+      showLogo: true,
+      showTax: true
+    };
+
+    let daftarMeja = JSON.parse(localStorage.getItem('database_meja')) || dataMejaDefault;
+    let riwayatTransaksi = JSON.parse(localStorage.getItem('database_transaksi')) || [];
+    let konfigStruk = JSON.parse(localStorage.getItem('database_struk_config')) || dataStrukDefault;
+    
+    let mejaTerpilih = null; 
+    let mejaTargetTemporary = null; 
+    let keranjang = {};
+
+    function simpanKeLocalStorage() { localStorage.setItem('database_meja', JSON.stringify(daftarMeja)); }
+    function simpanTransaksiKeLocalStorage() { localStorage.setItem('database_transaksi', JSON.stringify(riwayatTransaksi)); }
+
+    function pindahTab(namaTab) {
+      document.querySelectorAll('.blok-tab').forEach(el => el.classList.add('hidden'));
+      const btnKasir = document.getElementById('nav-btn-kasir');
+      const btnMeja = document.getElementById('nav-btn-meja');
+      const btnTambah = document.getElementById('nav-btn-tambah-menu');
+      const btnOwner = document.getElementById('nav-btn-owner');
+      const btnStruk = document.getElementById('nav-btn-struk');
+      
+      [btnKasir, btnMeja, btnTambah, btnOwner, btnStruk].forEach(btn => {
+        if(btn) {
+          btn.className = "flex flex-col items-center gap-0.5 text-gray-400 font-medium cursor-pointer group";
+          btn.querySelector('div').className = "p-1 rounded-xl bg-transparent";
+        }
+      });
+
+      if (namaTab === 'kasir') {
+        document.getElementById('konten-tab-kasir').classList.remove('hidden');
+        btnKasir.className = "flex flex-col items-center gap-0.5 text-blue-600 font-semibold cursor-pointer group";
+        btnKasir.querySelector('div').className = "p-1 rounded-xl bg-blue-50";
+      } else if (namaTab === 'meja') {
+        document.getElementById('konten-tab-meja').classList.remove('hidden');
+        btnMeja.className = "flex flex-col items-center gap-0.5 text-blue-600 font-semibold cursor-pointer group";
+        btnMeja.querySelector('div').className = "p-1 rounded-xl bg-blue-50";
+        tampilkanDenahMeja();
+      } else if (namaTab === 'tambah-menu') {
+        document.getElementById('konten-tab-tambah-menu').classList.remove('hidden');
+        btnTambah.className = "flex flex-col items-center gap-0.5 text-blue-600 font-semibold cursor-pointer group";
+        btnTambah.querySelector('div').className = "p-1 rounded-xl bg-blue-50";
+      } else if (namaTab === 'owner') {
+        document.getElementById('konten-tab-owner').classList.remove('hidden');
+        btnOwner.className = "flex flex-col items-center gap-0.5 text-blue-600 font-semibold cursor-pointer group";
+        btnOwner.querySelector('div').className = "p-1 rounded-xl bg-blue-50";
+        hitungDanTampilkanLaporanOwner();
+      } else if (namaTab === 'struk') {
+        document.getElementById('konten-tab-struk').classList.remove('hidden');
+        btnStruk.className = "flex flex-col items-center gap-0.5 text-blue-600 font-semibold cursor-pointer group";
+        btnStruk.querySelector('div').className = "p-1 rounded-xl bg-blue-50";
+        muatFormPengaturanStruk();
+      }
+    }
+
+    // BARU: Fungsi memuat data konfigurasi ke dalam input form struk
+    function muatFormPengaturanStruk() {
+      document.getElementById('struk-input-nama').value = konfigStruk.namaToko;
+      document.getElementById('struk-input-alamat').value = konfigStruk.alamatToko;
+      document.getElementById('struk-input-telp').value = konfigStruk.telpToko;
+      document.getElementById('struk-input-footer').value = konfigStruk.footerPesan;
+      document.getElementById('struk-input-show-logo').checked = konfigStruk.showLogo;
+      document.getElementById('struk-input-show-tax').checked = konfigStruk.showTax;
+      livePreviewStruk();
+    }
+
+    // BARU: Logika rendering layout teks struk thermal (Live Preview)
+    function livePreviewStruk() {
+      const nama = document.getElementById('struk-input-nama').value || "NAMA TOKO";
+      const alamat = document.getElementById('struk-input-alamat').value || "ALAMAT TOKO";
+      const telp = document.getElementById('struk-input-telp').value || "08xx";
+      const msgFooter = document.getElementById('struk-input-footer').value || "";
+      const logo = document.getElementById('struk-input-show-logo').checked;
+      const tax = document.getElementById('struk-input-show-tax').checked;
+
+      let pText = "";
+      if(logo) {
+        pText += `    ☕  KITA POS RESTO  ☕\n`;
+        pText += `--------------------------------\n`;
+      }
+      pText += `${pusatkanTeks(nama, 32)}\n`;
+      pText += `${pusatkanTeks(alamat, 32)}\n`;
+      pText += `${pusatkanTeks("Telp: " + telp, 32)}\n`;
+      pText += `================================\n`;
+      pText += `Tgl : ${new Date().toLocaleDateString('id-ID')}   Jam : ${new Date().toLocaleTimeString('id-ID')}\n`;
+      pText += `Kasir: Administrator\n`;
+      pText += `Tipe : Take Away (Bungkus)\n`;
+      pText += `--------------------------------\n`;
+      pText += `Contoh Item Menu x2   Rp  36.000\n`;
+      pText += `Contoh Minuman  x1   Rp  15.000\n`;
+      pText += `--------------------------------\n`;
+      pText += `Subtotal             Rp  51.000\n`;
+      if(tax) {
+        pText += `Pajak (11%)          Rp   5.610\n`;
+        pText += `Total Akhir          Rp  56.610\n`;
+      } else {
+        pText += `Total Akhir          Rp  51.000\n`;
+      }
+      pText += `Bayar                Rp  60.000\n`;
+      pText += `Kembalian            Rp   3.390\n`;
+      pText += `================================\n`;
+      if(msgFooter) {
+        const barisFooter = msgFooter.split('\n');
+        barisFooter.forEach(b => { pText += `${pusatkanTeks(b, 32)}\n`; });
+      }
+      
+      document.getElementById('struk-live-preview').textContent = pText;
+    }
+
+    function pusatkanTeks(teks, lebarMaks) {
+      if (teks.length >= lebarMaks) return teks.substring(0, lebarMaks);
+      const sisaSpasi = lebarMaks - teks.length;
+      const spasiKiri = Math.floor(sisaSpasi / 2);
+      return " ".repeat(spasiKiri) + teks;
+    }
+
+    // BARU: Menyimpan konfigurasi editor struk
+    function simpanPengaturanStruk(e) {
+      e.preventDefault();
+      konfigStruk = {
+        namaToko: document.getElementById('struk-input-nama').value.trim(),
+        alamatToko: document.getElementById('struk-input-alamat').value.trim(),
+        telpToko: document.getElementById('struk-input-telp').value.trim(),
+        footerPesan: document.getElementById('struk-input-footer').value.trim(),
+        showLogo: document.getElementById('struk-input-show-logo').checked,
+        showTax: document.getElementById('struk-input-show-tax').checked
+      };
+      localStorage.setItem('database_struk_config', JSON.stringify(konfigStruk));
+      alert("✨ Konfigurasi Tampilan Struk Berhasil Disimpan!");
+    }
+
+    function tampilkanDenahMeja() {
+      const gridMeja = document.getElementById('grid-meja'); gridMeja.innerHTML = '';
+
+      const btnTakeAway = document.createElement('div');
+      btnTakeAway.className = `p-4 rounded-2xl border text-center cursor-pointer flex flex-col justify-between min-h-[110px] ${!mejaTerpilih ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20' : 'border-gray-200 bg-white'}`;
+      btnTakeAway.innerHTML = `<div><h3 class="font-bold text-gray-800">Bungkus</h3><p class="text-[11px] text-gray-400 mt-0.5">Tanpa Nomor Meja</p></div>
+        <button onclick="pilihMejaEksekusi(null)" class="mt-2 w-full text-xs font-semibold bg-gray-800 text-white py-1.5 rounded-lg cursor-pointer">Pilih</button>`;
+      gridMeja.appendChild(btnTakeAway);
+
+      daftarMeja.forEach(m => {
+        const itemMeja = document.createElement('div');
+        const isTerisi = m.status === 'terisi';
+        const isSedangDipilih = mejaTerpilih === m.nomor;
+
+        itemMeja.className = `p-4 rounded-2xl border flex flex-col justify-between min-h-[115px] ${isSedangDipilih ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-600/20' : isTerisi ? 'border-red-100 bg-red-50/30' : 'border-gray-100 bg-white'}`;
+        
+        itemMeja.innerHTML = `
+          <div>
+            <div class="flex justify-between items-start">
+              <h3 class="text-base font-black text-gray-800">Meja ${m.nomor}</h3>
+              <span class="w-2.5 h-2.5 rounded-full ${isTerisi ? 'bg-red-500' : 'bg-green-500'}"></span>
+            </div>
+            ${isTerisi ? `<p class="text-xs font-bold text-gray-700 truncate max-w-[130px] mt-0.5"><i class="ri-user-3-line text-red-500 text-[11px]"></i> ${m.namaPelanggan}</p>` : ''}
+            <p class="text-[11px] font-medium ${isTerisi ? 'text-red-600' : 'text-gray-400'} mt-0.5">
+              ${isTerisi ? `Terisi (${m.jumlahOrang} Pax)` : 'Kosong'}
+            </p>
+            ${isTerisi ? `<p class="text-[10px] font-bold text-gray-700 mt-0.5">Rp ${m.totalTagihan.toLocaleString('id-ID')}</p>` : ''}
+          </div>
+          <div class="flex gap-1.5 mt-2">
+            <button onclick="pilihMejaAlur('${m.nomor}')" class="flex-1 text-[11px] font-bold py-1.5 rounded-lg border bg-white text-gray-700 border-gray-200 cursor-pointer hover:bg-gray-50">Kelola</button>
+          </div>
+        `;
+        gridMeja.appendChild(itemMeja);
+      });
+    }
+
+    function pilihMejaAlur(nomorMeja) {
+      const meja = daftarMeja.find(m => m.nomor === nomorMeja);
+      if (meja.status === 'terisi') { bukaModalOpsiMeja(nomorMeja); } else {
+        mejaTargetTemporary = nomorMeja;
+        document.getElementById('title-modal-pilih-meja').innerText = `Meja ${nomorMeja}`;
+        document.getElementById('modal-jumlah-orang').classList.remove('hidden');
+      }
+    }
+
+    function bukaModalOpsiMeja(nomorMeja) {
+      mejaTargetTemporary = nomorMeja; const meja = daftarMeja.find(m => m.nomor === nomorMeja);
+      document.getElementById('opsi-meja-title').innerText = `Manajemen Meja ${meja.nomor}`;
+      document.getElementById('opsi-meja-pax').innerText = `An. ${meja.namaPelanggan} (${meja.jumlahOrang} Pax)`;
+      const containerList = document.getElementById('opsi-meja-list-pesanan'); containerList.innerHTML = '';
+      const items = Object.values(meja.keranjangMeja);
+      if (items.length === 0) { containerList.innerHTML = `<p class="text-gray-400 italic text-center py-4">Belum ada item pesanan.</p>`; } else {
+        items.forEach(item => {
+          const div = document.createElement('div'); div.className = "flex justify-between items-center py-1 border-b border-gray-100 last:border-0";
+          div.innerHTML = `<span class="font-medium text-gray-700">${item.nama}</span><span class="font-bold text-gray-900">x${item.qty}</span>`;
+          containerList.appendChild(div);
+        });
+      }
+      document.getElementById('modal-opsi-meja').classList.remove('hidden');
+    }
+
+    function tutupModalOpsiMeja() { document.getElementById('modal-opsi-meja').classList.add('hidden'); mejaTargetTemporary = null; }
+    function eksekusiKirimKeKasir() { const target = mejaTargetTemporary; tutupModalOpsiMeja(); bukaKasirMeja(target); }
+    function eksekusiEditPesananMeja() { const target = mejaTargetTemporary; tutupModalOpsiMeja(); pilihMejaEksekusi(target); }
+
+    function eksekusiCetakStrukDapur() {
+      const meja = daftarMeja.find(m => m.nomor === mejaTargetTemporary); const items = Object.values(meja.keranjangMeja);
+      if (items.length === 0) { alert("Gagal cetak! Keranjang kosong."); return; }
+      let templateStrukDapur = `========================================\n         KITCHEN ORDER (DAPUR)\n========================================\nMeja        : Meja ${meja.nomor}\nAtas Nama   : ${meja.namaPelanggan}\n----------------------------------------\n`;
+      items.forEach(item => { templateStrukDapur += `${item.nama.padEnd(32)} x${item.qty}\n`; });
+      templateStrukDapur += `----------------------------------------\n========================================`;
+      console.log(templateStrukDapur); alert(`🖨️ Struk Dapur Dikirim ke Printer Thermal!`);
+    }
+
+    function tutupModalJumlahOrang() { document.getElementById('modal-jumlah-orang').classList.add('hidden'); document.getElementById('input-nama-pelanggan').value = ""; document.getElementById('input-pax').value = "1"; mejaTargetTemporary = null; }
+    function simpanJumlahOrang(e) {
+      e.preventDefault(); const nama = document.getElementById('input-nama-pelanggan').value.trim() || "-"; const pax = parseInt(document.getElementById('input-pax').value) || 1;
+      const meja = daftarMeja.find(m => m.nomor === mejaTargetTemporary);
+      if (meja) { meja.namaPelanggan = nama; meja.jumlahOrang = pax; meja.status = "terisi"; simpanKeLocalStorage(); }
+      const mejaTujuan = mejaTargetTemporary; tutupModalJumlahOrang(); pilihMejaEksekusi(mejaTujuan);
+    }
+
+    function pilihMejaEksekusi(nomorMeja) {
+      mejaTerpilih = nomorMeja; const label = document.getElementById('label-meja-aktif');
+      if (nomorMeja) { const meja = daftarMeja.find(m => m.nomor === nomorMeja); label.innerText = `Meja ${nomorMeja} (An. ${meja.namaPelanggan})`; keranjang = { ...meja.keranjangMeja }; } 
+      else { label.innerText = "Take Away (Bungkus)"; keranjang = {}; }
+      perbaruiUIKeranjang(); pindahTab('kasir');
+    }
+
+    function bukaKasirMeja(nomorMeja) {
+      const meja = daftarMeja.find(m => m.nomor === nomorMeja); mejaTerpilih = nomorMeja; keranjang = { ...meja.keranjangMeja };
+      document.getElementById('label-meja-aktif').innerText = `Meja ${nomorMeja} (An. ${meja.namaPelanggan})`; perbaruiUIKeranjang(); bukaModal();
+    }
+
+    function simpanBayarNanti() {
+      if (!mejaTerpilih) { alert("Hanya berlaku untuk pesanan Dine-In."); return; }
+      const meja = daftarMeja.find(m => m.nomor === mejaTerpilih);
+      if (meja) {
+        meja.keranjangMeja = { ...keranjang }; let subtotal = 0; for (let k in keranjang) subtotal += (keranjang[k].qty * keranjang[k].harga);
+        meja.totalTagihan = subtotal; meja.status = "terisi"; simpanKeLocalStorage();
+      }
+      alert(`💾 Tagihan Meja ${mejaTerpilih} disimpan!`); keranjang = {}; mejaTerpilih = null;
+      document.getElementById('label-meja-aktif').innerText = "Take Away (Bungkus)"; perbaruiUIKeranjang(); tutupModal(); pindahTab('meja');
+    }
+
+    // MODIFIKASI: Pencetakan Nota Kasir Akhir yang mengikuti template hasil "Edit Struk"
+    function prosesTransaksi() {
+      const totalAkhir = parseFloat(document.getElementById('modal-total').dataset.value) || 0;
+      const uangBayar = parseFloat(document.getElementById('input-bayar').value) || 0;
+      const metode = document.querySelector('input[name="metode_pembayaran"]:checked').value;
+      if (uangBayar < totalAkhir) { alert("Uang pembayaran kurang!"); return; }
+      
+      const itemDibeli = [];
+      let subtotalMurni = 0;
+      for (let id in keranjang) {
+        subtotalMurni += (keranjang[id].qty * keranjang[id].harga);
+        itemDibeli.push({ id: parseInt(id), nama: keranjang[id].nama, harga: keranjang[id].harga, qty: keranjang[id].qty });
+      }
+
+      const transaksiBaru = { waktu: new Date().toISOString(), total: totalAkhir, metode: metode, items: itemDibeli };
+      riwayatTransaksi.push(transaksiBaru);
+      simpanTransaksiKeLocalStorage();
+
+      // MEMULAI FORMULASI STRUK DINAMIS PEMBELIAN KASIR BERDASARKAN HASIL EDIT OWNER
+      let strukNotaKasir = "";
+      if (konfigStruk.showLogo) {
+        strukNotaKasir += `    ☕  ${konfigStruk.namaToko.toUpperCase()}  ☕\n`;
+        strukNotaKasir += `--------------------------------\n`;
+      }
+      strukNotaKasir += `${pusatkanTeks(konfigStruk.namaToko, 32)}\n`;
+      strukNotaKasir += `${pusatkanTeks(konfigStruk.alamatToko, 32)}\n`;
+      strukNotaKasir += `${pusatkanTeks("Telp: " + konfigStruk.telpToko, 32)}\n`;
+      strukNotaKasir += `================================\n`;
+      strukNotaKasir += `Tgl: ${new Date().toLocaleDateString('id-ID')}   Jam: ${new Date().toLocaleTimeString('id-ID')}\n`;
+      strukNotaKasir += `Kasir: Kasir Utama\n`;
+      strukNotaKasir += `Jenis: ${mejaTerpilih ? 'Meja ' + mejaTerpilih : 'Take Away (Bungkus)'}\n`;
+      strukNotaKasir += `--------------------------------\n`;
+      
+      itemDibeli.forEach(itm => {
+        let barisNama = `${itm.nama} x${itm.qty}`;
+        let hargaKanan = `Rp ${(itm.qty * itm.harga).toLocaleString('id-ID')}`;
+        let sisaRuang = 32 - barisNama.length - hargaKanan.length;
+        if(sisaRuang < 1) sisaRuang = 1;
+        strukNotaKasir += `${barisNama}${" ".repeat(sisaRuang)}${hargaKanan}\n`;
+      });
+      
+      strukNotaKasir += `--------------------------------\n`;
+      strukNotaKasir += `Subtotal ........... Rp ${subtotalMurni.toLocaleString('id-ID')}\n`;
+      if (konfigStruk.showTax) {
+        strukNotaKasir += `Pajak (11%) ........ Rp ${(subtotalMurni * 0.11).toLocaleString('id-ID')}\n`;
+      }
+      strukNotaKasir += `TOTAL AKHIR ........ Rp ${totalAkhir.toLocaleString('id-ID')}\n`;
+      strukNotaKasir += `Bayar (${metode}) .... Rp ${uangBayar.toLocaleString('id-ID')}\n`;
+      strukNotaKasir += `Kembalian .......... Rp ${(uangBayar - totalAkhir).toLocaleString('id-ID')}\n`;
+      strukNotaKasir += `================================\n`;
+      
+      if (konfigStruk.footerPesan) {
+        konfigStruk.footerPesan.split('\n').forEach(b => { strukNotaKasir += `${pusatkanTeks(b, 32)}\n`; });
+      }
+
+      console.log(strukNotaKasir);
+      alert(`🎉 Pembayaran Sukses!\n\nLayout struk berhasil dicetak ke Printer Kasir menggunakan template "${konfigStruk.namaToko}". (Lihat tab console browser Anda)`);
+
+      if (mejaTerpilih) {
+        const meja = daftarMeja.find(m => m.nomor === mejaTerpilih);
+        meja.status = "kosong"; meja.totalTagihan = 0; meja.jumlahOrang = 0; meja.namaPelanggan = ""; meja.keranjangMeja = {};
+        simpanKeLocalStorage();
+      }
+
+      keranjang = {}; mejaTerpilih = null; document.getElementById('label-meja-aktif').innerText = "Take Away (Bungkus)";
+      perbaruiUIKeranjang(); tutupModal(); pindahTab('owner');
+    }
+
+    function hitungDanTampilkanLaporanOwner() {
+      const tanggalSekarang = new Date(); const formatHariIni = tanggalSekarang.toDateString(); 
+      const bulanSekarang = tanggalSekarang.getMonth(); const tahunSekarang = tanggalSekarang.getFullYear();
+      let omsetHariIni = 0, countHariIni = 0, omsetBulanIni = 0, countBulanIni = 0, akumulasiOmsetTotal = 0;
+      const produkTerjualMap = {};
+
+      riwayatTransaksi.forEach(tx => {
+        const txDate = new Date(tx.waktu); akumulasiOmsetTotal += tx.total;
+        if (txDate.toDateString() === formatHariIni) { omsetHariIni += tx.total; countHariIni++; }
+        if (txDate.getMonth() === bulanSekarang && txDate.getFullYear() === tahunSekarang) { omsetBulanIni += tx.total; countBulanIni++; }
+        tx.items.forEach(item => {
+          if (produkTerjualMap[item.nama]) { produkTerjualMap[item.nama].qty += item.qty; } else {
+            const pAsli = daftarProduk.find(p => p.nama === item.nama);
+            const kat = pAsli ? pAsli.kategori : "Lainnya";
+            produkTerjualMap[item.nama] = { nama: item.nama, kategori: kat, qty: item.qty };
+          }
+        });
+      });
+
+      document.getElementById('owner-omset-hari').innerText = `Rp ${omsetHariIni.toLocaleString('id-ID')}`;
+      document.getElementById('owner-count-hari').innerText = `${countHariIni} Transaksi sukses`;
+      document.getElementById('owner-omset-bulan').innerText = `Rp ${omsetBulanIni.toLocaleString('id-ID')}`;
+      document.getElementById('owner-count-bulan').innerText = `${countBulanIni} Transaksi sukses`;
+      document.getElementById('owner-omset-total').innerText = `Rp ${akumulasiOmsetTotal.toLocaleString('id-ID')}`;
+
+      const tbody = document.getElementById('owner-tabel-terjual'); const kosongState = document.getElementById('owner-kosong-state');
+      tbody.innerHTML = ''; const listProdukTerjual = Object.values(produkTerjualMap);
+      
+      if (listProdukTerjual.length === 0) { kosongState.classList.remove('hidden'); } else {
+        kosongState.classList.add('hidden'); listProdukTerjual.sort((a, b) => b.qty - a.qty);
+        listProdukTerjual.forEach(prod => {
+          const row = document.createElement('tr'); row.className = "border-b border-gray-50 hover:bg-gray-50/50 transition-colors";
+          row.innerHTML = `<td class="py-3 font-semibold text-gray-800">${prod.nama}</td><td class="py-3 text-center"><span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-sm font-medium capitalize">${prod.kategori}</span></td><td class="py-3 text-right font-black text-blue-600">${prod.qty} Pcs</td>`;
+          tbody.appendChild(row);
+        });
+      }
+    }
+
+    function resetDataPenjualan() {
+      if (confirm("Riset seluruh riwayat transaksi penjualan toko?")) { riwayatTransaksi = []; simpanTransaksiKeLocalStorage(); hitungDanTampilkanLaporanOwner(); }
+    }
+
+    function tambahKeKeranjang(id) {
+      const produk = daftarProduk.find(p => p.id === id);
+      if (keranjang[id]) {
+        if(keranjang[id].qty >= produk.stok) { alert("Stok habis!"); return; }
+        keranjang[id].qty += 1;
+      } else { keranjang[id] = { nama: produk.nama, harga: produk.harga, kategori: produk.kategori, qty: 1 }; }
+      if (mejaTerpilih) {
+        const meja = daftarMeja.find(m => m.nomor === mejaTerpilih); meja.keranjangMeja = { ...keranjang };
+        let subtotal = 0; for (let k in keranjang) subtotal += (keranjang[k].qty * keranjang[k].harga);
+        meja.totalTagihan = subtotal; simpanKeLocalStorage();
+      }
+      perbaruiUIKeranjang();
+    }
+
+    function bukaModalTambahMeja() { document.getElementById('modal-tambah-meja').classList.remove('hidden'); document.getElementById('error-tambah-meja').classList.add('hidden'); }
+    function tutupModalTambahMeja() { document.getElementById('modal-tambah-meja').classList.add('hidden'); document.getElementById('input-nomor-meja').value = ''; }
+    function simpanMejaBaru(e) {
+      e.preventDefault(); const nomorBaru = document.getElementById('input-nomor-meja').value.trim();
+      const sudahAda = daftarMeja.some(m => m.nomor.toLowerCase() === nomorBaru.toLowerCase()); if (sudahAda) { document.getElementById('error-tambah-meja').classList.remove('hidden'); return; }
+      daftarMeja.push({ nomor: nomorBaru, status: "kosong", totalTagihan: 0, jumlahOrang: 0, namaPelanggan: "", keranjangMeja: {} });
+      simpanKeLocalStorage(); tampilkanDenahMeja(); tutupModalTambahMeja();
+    }
+
+    function tampilkanProduk(produkUntukDitampilkan) {
+      const grid = document.getElementById('grid-produk'); grid.innerHTML = '';
+      produkUntukDitampilkan.forEach(p => {
+        const kartu = document.createElement('div'); kartu.className = "bg-white border border-gray-100 rounded-xl overflow-hidden shadow-xs flex flex-col justify-between";
+        kartu.innerHTML = `<div><img src="${p.gambar}" alt="${p.nama}" class="w-full h-32 object-cover bg-gray-100">
+            <div class="p-3"><span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-sm font-medium capitalize">${p.kategori}</span>
+              <h3 class="text-sm font-semibold text-gray-800 mt-1 line-clamp-2 min-h-[40px]">${p.nama}</h3><p class="text-xs text-gray-400 mt-0.5">Stok: ${p.stok}</p></div></div>
+          <div class="p-3 pt-0 flex items-center justify-between gap-2 mt-2"><span class="text-sm font-bold text-blue-600">Rp ${p.harga.toLocaleString('id-ID')}</span>
+            <button onclick="tambahKeKeranjang(${p.id})" class="bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white p-2 rounded-lg cursor-pointer"><i class="ri-add-line font-bold"></i></button></div>`;
+        grid.appendChild(kartu);
+      });
+    }
+
+    function perbaruiUIKeranjang() {
+      const cartBar = document.getElementById('cart-bar'); const cartCount = document.getElementById('cart-count'); const cartTotal = document.getElementById('cart-total');
+      let totalItem = 0, totalHarga = 0; for (let id in keranjang) { totalItem += keranjang[id].qty; totalHarga += (keranjang[id].qty * keranjang[id].harga); }
+      if (totalItem > 0) { cartBar.classList.remove('hidden'); cartCount.innerText = totalItem; cartTotal.innerText = `Rp ${totalHarga.toLocaleString('id-ID')}`; } else { cartBar.classList.add('hidden'); }
+    }
+
+    function filterKategori(kategori) {
+      document.querySelectorAll('.btn-kategori').forEach(btn => { btn.className = "btn-kategori bg-white text-gray-600 border border-gray-200 px-4 py-1.5 rounded-full text-xs font-semibold"; });
+      event.target.className = "btn-kategori bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-xs";
+      if (kategori === 'semua') tampilkanProduk(daftarProduk); else tampilkanProduk(daftarProduk.filter(p => p.kategori === kategori));
+    }
+
+    document.getElementById('search-bar').addEventListener('input', (e) => { tampilkanProduk(daftarProduk.filter(p => p.nama.toLowerCase().includes(e.target.value.toLowerCase()))); });
+    
+    function bukaModal() { 
+      document.getElementById('modal-meja-title').innerText = mejaTerpilih ? `(Meja ${mejaTerpilih})` : `(Take Away)`; 
+      const btnBayarNanti = document.getElementById('btn-bayar-nanti'); if (!mejaTerpilih) btnBayarNanti.classList.add('hidden'); else btnBayarNanti.classList.remove('hidden');
+      document.getElementById('modal-keranjang').classList.remove('hidden'); renderIsiModal(); 
+    }
+    
+    function tutupModal() { document.getElementById('modal-keranjang').classList.add('hidden'); document.getElementById('input-bayar').value = ''; document.getElementById('text-kembalian').innerText = 'Rp 0'; }
+
+    function renderIsiModal() {
+      const container = document.getElementById('daftar-item-keranjang'); container.innerHTML = ''; let subtotal = 0;
+      for (let id in keranjang) {
+        const item = keranjang[id]; const totalHargaItem = item.qty * item.harga; subtotal += totalHargaItem;
+        const row = document.createElement('div'); row.className = "flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100 shadow-2xs";
+        row.innerHTML = `<div class="flex-1 pr-2"><h4 class="text-sm font-bold text-gray-800 line-clamp-1">${item.nama}</h4><p class="text-xs text-gray-400">@ Rp ${item.harga.toLocaleString('id-ID')}</p></div>
+          <div class="flex items-center gap-3"><div class="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+              <button onclick="ubahQty(${id}, -1)" class="px-2.5 py-1 text-gray-500 font-bold">-</button><span class="px-3 text-sm font-semibold text-gray-700 text-center">${item.qty}</span><button onclick="ubahQty(${id}, 1)" class="px-2.5 py-1 text-gray-500 font-bold">+</button></div>
+            <span class="text-sm font-bold text-gray-700 text-right">Rp ${totalHargaItem.toLocaleString('id-ID')}</span></div>`;
+        container.appendChild(row);
+      }
+      
+      // Mengikuti setting pajak dari menu konfigurasi struk aktif
+      const pajak = konfigStruk.showTax ? (subtotal * 0.11) : 0; 
+      const totalAkhir = subtotal + pajak;
+      
+      if(!konfigStruk.showTax) document.getElementById('container-row-pajak').classList.add('hidden');
+      else document.getElementById('container-row-pajak').classList.remove('hidden');
+
+      document.getElementById('modal-subtotal').innerText = `Rp ${subtotal.toLocaleString('id-ID')}`; 
+      document.getElementById('modal-pajak').innerText = `Rp ${pajak.toLocaleString('id-ID')}`;
+      document.getElementById('modal-total').innerText = `Rp ${totalAkhir.toLocaleString('id-ID')}`; 
+      document.getElementById('modal-total').dataset.value = totalAkhir; 
+      hitungKembalian();
+    }
+
+    function ubahQty(id, perubahan) {
+      if (keranjang[id]) {
+        keranjang[id].qty += perubahan; if (keranjang[id].qty <= 0) delete keranjang[id];
+        if (mejaTerpilih) {
+          const meja = daftarMeja.find(m => m.nomor === mejaTerpilih); meja.keranjangMeja = { ...keranjang };
+          if(Object.keys(keranjang).length === 0) { meja.status = "kosong"; meja.totalTagihan = 0; meja.jumlahOrang = 0; meja.namaPelanggan = ""; }
+          simpanKeLocalStorage();
+        }
+        perbaruiUIKeranjang(); if (Object.keys(keranjang).length === 0) tutupModal(); else renderIsiModal();
+      }
+    }
+
+    function hitungKembalian() {
+      const totalAkhir = parseFloat(document.getElementById('modal-total').dataset.value) || 0; const uangBayar = parseFloat(document.getElementById('input-bayar').value) || 0;
+      const elementKembalian = document.getElementById('text-kembalian'); const kembalian = uangBayar - totalAkhir;
+      if (uangBayar === 0) { elementKembalian.innerText = "Rp 0"; elementKembalian.className = "w-full px-3 py-2 bg-gray-100 rounded-lg text-sm font-bold text-gray-700"; } 
+      else if (kembalian < 0) { elementKembalian.innerText = "Uang Kurang!"; elementKembalian.className = "w-full px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-bold border border-red-100"; } 
+      else { elementKembalian.innerText = `Rp ${kembalian.toLocaleString('id-ID')}`; elementKembalian.className = "w-full px-3 py-2 bg-green-50 text-green-600 rounded-lg text-sm font-bold border border-green-100"; }
+    }
+
+    tampilkanProduk(daftarProduk);
+  </script>
+</body>
+</html>
